@@ -52,7 +52,7 @@ async def start(message: types.Message):
     await message.answer(agreement_text, reply_markup=keyboard)
 
 
-@router.callback_query()
+@router.callback_query(F.data == 'accept_agreement')
 async def accept_agreement(callback_query: types.CallbackQuery, state: FSMContext):
     await state.set_state(Registration.PhoneNumber.state)
     await callback_query.message.edit_text("Пожалуйста, введите ваш номер телефона.")
@@ -73,14 +73,23 @@ async def get_phone_number(message: types.Message, state: FSMContext):
 @router.message(Registration.FirstName)
 async def get_first_name(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
+    first_name = message.text
+    user_data["first_name"] = first_name
+    await state.set_data(user_data)
+
     current_state = await state.get_state()
 
-    if current_state == Registration.FirstName.state:
-        first_name = message.text
-        user_data["first_name"] = first_name
-        await state.set_data(user_data)
+    if current_state == Registration.FirstName.state and not user_data.get("last_name"):
         await state.set_state(Registration.LastName.state)
         await message.answer("Пожалуйста, введите вашу фамилию.")
+    else:
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="Принять", callback_data='accept_first_name')],
+                [InlineKeyboardButton(text="Изменить", callback_data='edit_first_name')]
+            ]
+        )
+        await message.answer(f"Имя - {first_name}", reply_markup=keyboard)
 
 
 @router.message(Registration.LastName)
@@ -94,15 +103,40 @@ async def get_last_name(message: types.Message, state: FSMContext):
         user_data["last_name"] = last_name
         await state.set_data(user_data)
 
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text="Изменить имя", callback_data='edit_first_name')],
-                [InlineKeyboardButton(text="Изменить фамилию", callback_data='edit_last_name')],
-                [InlineKeyboardButton(text="Завершить редактирование", callback_data='finish_registration')]
-            ]
-        )
-        await message.answer(f"Ваша учётная запись:\nИмя - {first_name}\nФамилия - {last_name}", reply_markup=keyboard)
+        await send_user_data(message, first_name, last_name)
         await state.set_state(Registration.EditingMenu.state)
+
+
+async def send_user_data(message_or_query, first_name, last_name):
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Изменить имя", callback_data='edit_first_name')],
+            [InlineKeyboardButton(text="Изменить фамилию", callback_data='edit_last_name')],
+            [InlineKeyboardButton(text="Завершить редактирование", callback_data='finish_registration')]
+        ]
+    )
+
+    text = f"Ваша учётная запись:\nИмя - {first_name}\nФамилия - {last_name}"
+
+    if isinstance(message_or_query, types.CallbackQuery):
+        await message_or_query.message.edit_text(text, reply_markup=keyboard)
+    else:
+        await message_or_query.answer(text, reply_markup=keyboard)
+
+
+@router.callback_query(F.data == 'edit_first_name')
+async def edit_first_name_handler(callback_query: types.CallbackQuery, state: FSMContext):
+    await state.set_state(Registration.FirstName.state)
+    await callback_query.message.edit_text("Введите новое имя.")
+
+
+@router.callback_query(F.data == 'accept_first_name')
+async def accept_first_name_handler(callback_query: types.CallbackQuery, state: FSMContext):
+    user_data = await state.get_data()
+    first_name = user_data.get("first_name", "Неизвестное имя")
+    last_name = user_data.get("last_name", "Неизвестная фамилия")
+
+    await send_user_data(callback_query, first_name, last_name)
 
 
 dp.include_router(router)
