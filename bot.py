@@ -9,6 +9,7 @@ import os
 import asyncio
 from channels.db import database_sync_to_async
 from agreement import AGREEMENT_TEXT
+from aiogram.filters import Filter
 
 
 TELEGRAM_TOKEN = config('TELEGRAM_TOKEN')
@@ -34,6 +35,14 @@ class Registration(StatesGroup):
     EditingMenu = State()
 
 
+class IsReg(Filter):
+    key = "is_reg"
+
+    async def __call__(self, message: types.Message, state: FSMContext):
+        current_state = await state.get_state()
+        return current_state is None and message.text != '/start'
+
+
 @database_sync_to_async
 def save_user_to_db(telegram_id, first_name, last_name, phone_number):
     TelegramUser.objects.create(
@@ -49,7 +58,7 @@ def is_user_registered(user_id: int) -> bool:
     return TelegramUser.objects.filter(telegram_id=user_id).exists()
 
 
-@router.message(F.text != '/start')
+@router.message(IsReg())
 async def handle_text_messages(message: types.Message):
     user_id = message.from_user.id
 
@@ -198,9 +207,7 @@ async def finish_registration(callback_query: types.CallbackQuery, state: FSMCon
     # Отправляем сообщение пользователю
     await callback_query.message.answer("Регистрация завершена")
 
-    # TODO доделать
-    # Очищаем состояние пользователя (если используется FSM)
-    # await state.reset_state()
+    await state.clear()
 
 
 dp.include_router(router)
