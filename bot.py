@@ -22,7 +22,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'itregul1.settings')
 import django
 django.setup()
 
-from users.models import User
+from users.models import TelegramUser
 
 router = Router()
 
@@ -35,8 +35,28 @@ class Registration(StatesGroup):
 
 
 @database_sync_to_async
+def save_user_to_db(telegram_id, first_name, last_name, phone_number):
+    TelegramUser.objects.create(
+        telegram_id=telegram_id,
+        first_name=first_name,
+        last_name=last_name,
+        phone_number=phone_number
+    )
+
+
+@database_sync_to_async
 def is_user_registered(user_id: int) -> bool:
-    return User.objects.filter(telegram_id=user_id).exists()
+    return TelegramUser.objects.filter(telegram_id=user_id).exists()
+
+
+@router.message(F.text != '/start')
+async def handle_text_messages(message: types.Message):
+    user_id = message.from_user.id
+
+    if await is_user_registered(user_id):
+        await message.answer("Вы уже зарегистрированы в системе.")
+    else:
+        await message.answer("Вы не зарегистрированы в системе. Чтобы начать регистрацию, отправьте команду /start.")
 
 
 @router.message(Command("start"))
@@ -95,16 +115,25 @@ async def get_first_name(message: types.Message, state: FSMContext):
 @router.message(Registration.LastName)
 async def get_last_name(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
+    previous_last_name = user_data.get("last_name")
+
+    last_name = message.text
+    user_data["last_name"] = last_name
+    await state.set_data(user_data)
+
     first_name = user_data.get("first_name", "Неизвестное имя")
-    current_state = await state.get_state()
 
-    if current_state == Registration.LastName.state:
-        last_name = message.text
-        user_data["last_name"] = last_name
-        await state.set_data(user_data)
-
+    if not previous_last_name:
         await send_user_data(message, first_name, last_name)
         await state.set_state(Registration.EditingMenu.state)
+    else:
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="Принять", callback_data='accept_last_name')],
+                [InlineKeyboardButton(text="Изменить", callback_data='edit_last_name')]
+            ]
+        )
+        await message.answer(f"Фамилия - {last_name}", reply_markup=keyboard)
 
 
 async def send_user_data(message_or_query, first_name, last_name):
@@ -130,6 +159,12 @@ async def edit_first_name_handler(callback_query: types.CallbackQuery, state: FS
     await callback_query.message.edit_text("Введите новое имя.")
 
 
+@router.callback_query(F.data == 'edit_last_name')
+async def edit_last_name_handler(callback_query: types.CallbackQuery, state: FSMContext):
+    await state.set_state(Registration.LastName.state)
+    await callback_query.message.edit_text("Введите новую фамилию.")
+
+
 @router.callback_query(F.data == 'accept_first_name')
 async def accept_first_name_handler(callback_query: types.CallbackQuery, state: FSMContext):
     user_data = await state.get_data()
@@ -137,6 +172,35 @@ async def accept_first_name_handler(callback_query: types.CallbackQuery, state: 
     last_name = user_data.get("last_name", "Неизвестная фамилия")
 
     await send_user_data(callback_query, first_name, last_name)
+
+
+@router.callback_query(F.data == 'accept_last_name')
+async def accept_last_name_handler(callback_query: types.CallbackQuery, state: FSMContext):
+    user_data = await state.get_data()
+    first_name = user_data.get("first_name", "Неизвестное имя")
+    last_name = user_data.get("last_name", "Неизвестная фамилия")
+
+    await send_user_data(callback_query, first_name, last_name)
+
+
+@router.callback_query(F.data == 'finish_registration')
+async def finish_registration(callback_query: types.CallbackQuery, state: FSMContext):
+    user_data = await state.get_data()
+
+    first_name = user_data.get("first_name", "")
+    last_name = user_data.get("last_name", "")
+    phone_number = user_data.get("phone_number", "")
+    telegram_id = callback_query.from_user.id
+
+    # Записываем пользователя в базу данных
+    await save_user_to_db(telegram_id, first_name, last_name, phone_number)
+
+    # Отправляем сообщение пользователю
+    await callback_query.message.answer("Регистрация завершена")
+
+    # TODO доделать
+    # Очищаем состояние пользователя (если используется FSM)
+    # await state.reset_state()
 
 
 dp.include_router(router)

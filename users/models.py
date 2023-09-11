@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class User(models.Model):
+class TelegramUser(models.Model):
     telegram_id = models.IntegerField(unique=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
