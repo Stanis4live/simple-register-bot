@@ -10,6 +10,14 @@ import asyncio
 from channels.db import database_sync_to_async
 from agreement import AGREEMENT_TEXT
 from aiogram.filters import Filter
+import logging
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[logging.FileHandler("bot_logs.log", 'a', 'utf-8')])
+
+logger = logging.getLogger(__name__)
+
 
 
 TELEGRAM_TOKEN = config('TELEGRAM_TOKEN')
@@ -29,6 +37,7 @@ router = Router()
 
 
 class Registration(StatesGroup):
+    '''Класс состояний для процесса регистрации.'''
     PhoneNumber = State()
     FirstName = State()
     LastName = State()
@@ -36,6 +45,7 @@ class Registration(StatesGroup):
 
 
 class IsReg(Filter):
+    '''Фильтр для проверки состояний и команды /start.'''
     key = "is_reg"
 
     async def __call__(self, message: types.Message, state: FSMContext):
@@ -45,6 +55,7 @@ class IsReg(Filter):
 
 @database_sync_to_async
 def save_user_to_db(telegram_id, first_name, last_name, phone_number):
+    '''Сохраняет данные пользователя в базе данных.'''
     TelegramUser.objects.create(
         telegram_id=telegram_id,
         first_name=first_name,
@@ -55,11 +66,13 @@ def save_user_to_db(telegram_id, first_name, last_name, phone_number):
 
 @database_sync_to_async
 def is_user_registered(user_id: int) -> bool:
+    '''Проверяет, зарегистрирован ли пользователь в базе данных.'''
     return TelegramUser.objects.filter(telegram_id=user_id).exists()
 
 
 @router.message(IsReg())
 async def handle_text_messages(message: types.Message):
+    '''Обрабатывает текстовые сообщения от пользователей.'''
     user_id = message.from_user.id
 
     if await is_user_registered(user_id):
@@ -70,37 +83,52 @@ async def handle_text_messages(message: types.Message):
 
 @router.message(Command("start"))
 async def start(message: types.Message):
-    user_id = message.from_user.id
+    '''Обрабатывает команду /start и начинает процесс регистрации.'''
+    try:
+        user_id = message.from_user.id
 
-    if await is_user_registered(user_id):
-        await message.answer("Вы уже зарегистрированы в системе.")
-        return
+        if await is_user_registered(user_id):
+            await message.answer("Вы уже зарегистрированы в системе.")
+            return
 
-    agreement_text = AGREEMENT_TEXT
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Принять", callback_data='accept_agreement')]])
-    await message.answer(agreement_text, reply_markup=keyboard)
+        agreement_text = AGREEMENT_TEXT
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Принять", callback_data='accept_agreement')]])
+        await message.answer(agreement_text, reply_markup=keyboard)
+    except Exception as e:
+        logger.error(f"Error in start: {e}")
 
 
 @router.callback_query(F.data == 'accept_agreement')
 async def accept_agreement(callback_query: types.CallbackQuery, state: FSMContext):
-    await state.set_state(Registration.PhoneNumber.state)
-    await callback_query.message.edit_text("Пожалуйста, введите ваш номер телефона.")
+    '''Обрабатывает подтверждение пользовательского соглашения.'''
+    try:
+        await state.set_state(Registration.PhoneNumber.state)
+        await callback_query.message.edit_text("Пожалуйста, введите ваш номер телефона.")
+    except Exception as e:
+        await callback_query.message.answer("Произошла ошибка. Пожалуйста, попробуйте еще раз.")
+        print(f"Error in accept_agreement: {e}")
 
 
 @router.message(Registration.PhoneNumber)
 async def get_phone_number(message: types.Message, state: FSMContext):
-    user_id = message.from_user.id
-    current_state = await state.get_state()
+    '''Получает и сохраняет номер телефона пользователя.'''
+    try:
+        user_id = message.from_user.id
+        current_state = await state.get_state()
 
-    if current_state == Registration.PhoneNumber.state:
-        phone_number = message.text
-        await state.set_data({"phone_number": phone_number})
-        await state.set_state(Registration.FirstName.state)
-        await message.answer("Пожалуйста, введите ваше имя.")
+        if current_state == Registration.PhoneNumber.state:
+            phone_number = message.text
+            await state.set_data({"phone_number": phone_number})
+            await state.set_state(Registration.FirstName.state)
+            await message.answer("Пожалуйста, введите ваше имя.")
+    except Exception as e:
+        await message.answer("Произошла ошибка при обработке вашего номера телефона. Пожалуйста, попробуйте еще раз.")
+        print(f"Error in get_phone_number: {e}")
 
 
 @router.message(Registration.FirstName)
 async def get_first_name(message: types.Message, state: FSMContext):
+    '''Получает и сохраняет имя пользователя.'''
     user_data = await state.get_data()
     first_name = message.text
     user_data["first_name"] = first_name
@@ -123,6 +151,7 @@ async def get_first_name(message: types.Message, state: FSMContext):
 
 @router.message(Registration.LastName)
 async def get_last_name(message: types.Message, state: FSMContext):
+    '''Получает и сохраняет фамилию пользователя.'''
     user_data = await state.get_data()
     previous_last_name = user_data.get("last_name")
 
@@ -146,6 +175,7 @@ async def get_last_name(message: types.Message, state: FSMContext):
 
 
 async def send_user_data(message_or_query, first_name, last_name):
+    '''Отправляет пользователю его текущие данные.'''
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="Изменить имя", callback_data='edit_first_name')],
@@ -194,6 +224,7 @@ async def accept_last_name_handler(callback_query: types.CallbackQuery, state: F
 
 @router.callback_query(F.data == 'finish_registration')
 async def finish_registration(callback_query: types.CallbackQuery, state: FSMContext):
+    '''Завершает процесс регистрации, сохраняя данные пользователя в базе данных.'''
     user_data = await state.get_data()
 
     first_name = user_data.get("first_name", "")
@@ -201,10 +232,9 @@ async def finish_registration(callback_query: types.CallbackQuery, state: FSMCon
     phone_number = user_data.get("phone_number", "")
     telegram_id = callback_query.from_user.id
 
-    # Записываем пользователя в базу данных
     await save_user_to_db(telegram_id, first_name, last_name, phone_number)
-
-    # Отправляем сообщение пользователю
+    logger.info(
+        f"New user registered: ID={telegram_id}, First Name={first_name}, Last Name={last_name}, Phone={phone_number}")
     await callback_query.message.answer("Регистрация завершена")
 
     await state.clear()
