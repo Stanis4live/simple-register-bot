@@ -1,5 +1,5 @@
 import os
-from aiogram import Router, types, F
+from aiogram import types, F
 from aiogram.filters.state import State, StatesGroup
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
@@ -8,7 +8,9 @@ from channels.db import database_sync_to_async
 from bot_module.agreement import AGREEMENT_TEXT
 from aiogram.filters import Filter
 import logging
-from bot_module.services import main_keyboard
+from keyboards import main_keyboard
+from router_config import router
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'itregul1.settings')
 
@@ -19,8 +21,6 @@ from users.models import TelegramUser
 
 
 logger = logging.getLogger(__name__)
-
-router = Router()
 
 
 class Registration(StatesGroup):
@@ -71,6 +71,7 @@ async def handle_text_messages(message: types.Message):
 
 @router.message(Command("start"))
 async def start(message: types.Message):
+    print('start')
     '''Обрабатывает команду /start и начинает процесс регистрации.'''
     try:
         user_id = message.from_user.id
@@ -86,7 +87,7 @@ async def start(message: types.Message):
     except Exception as e:
         logger.error(f"Error in start: {e}")
 
-# _________________________________________________________________________
+
 @router.callback_query(F.data == 'accept_agreement')
 async def accept_agreement(callback_query: types.CallbackQuery, state: FSMContext):
     '''Обрабатывает подтверждение пользовательского соглашения.'''

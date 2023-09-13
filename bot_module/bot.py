@@ -1,9 +1,10 @@
-from aiogram import Bot, Dispatcher, types, F, Router
+from aiogram import Bot, Dispatcher, types
 from decouple import config
 import os
 import asyncio
 import logging
-from registration import router, save_user_to_db, is_user_registered, handle_text_messages, start
+from router_config import router
+
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -26,6 +27,7 @@ django.setup()
 
 
 dp.include_router(router)
+from registration import *
 
 
 async def main():
