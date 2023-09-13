@@ -14,7 +14,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler("bot_logs.log", 'a', 'utf-8')])
+                    handlers=[logging.FileHandler("../bot_logs.log", 'a', 'utf-8')])
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +102,11 @@ async def start(message: types.Message):
 async def accept_agreement(callback_query: types.CallbackQuery, state: FSMContext):
     '''Обрабатывает подтверждение пользовательского соглашения.'''
     try:
+        user_data = {
+            "first_name": callback_query.from_user.first_name,
+            "last_name": callback_query.from_user.last_name
+        }
+        await state.set_data(user_data)
         await state.set_state(Registration.PhoneNumber.state)
         await callback_query.message.edit_text("Пожалуйста, введите ваш номер телефона.")
     except Exception as e:
@@ -113,14 +118,15 @@ async def accept_agreement(callback_query: types.CallbackQuery, state: FSMContex
 async def get_phone_number(message: types.Message, state: FSMContext):
     '''Получает и сохраняет номер телефона пользователя.'''
     try:
-        user_id = message.from_user.id
-        current_state = await state.get_state()
+        user_data = await state.get_data()
+        phone_number = message.text
+        user_data["phone_number"] = phone_number
+        await state.set_data(user_data)
 
-        if current_state == Registration.PhoneNumber.state:
-            phone_number = message.text
-            await state.set_data({"phone_number": phone_number})
-            await state.set_state(Registration.FirstName.state)
-            await message.answer("Пожалуйста, введите ваше имя.")
+        first_name = user_data.get("first_name", "Неизвестное имя")
+        last_name = user_data.get("last_name", "Неизвестная фамилия")
+        await send_user_data(message, first_name, last_name)
+        await state.set_state(Registration.EditingMenu.state)
     except Exception as e:
         await message.answer("Произошла ошибка при обработке вашего номера телефона. Пожалуйста, попробуйте еще раз.")
         print(f"Error in get_phone_number: {e}")
@@ -248,9 +254,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
-
-
-
