@@ -1,30 +1,14 @@
-from aiogram import Bot, Dispatcher, types, F
-from aiogram import Router
-from aiogram.filters.command import Command
+import os
+
+from aiogram import Router, types, F
 from aiogram.filters.state import State, StatesGroup
+from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from decouple import config
-import os
-import asyncio
 from channels.db import database_sync_to_async
-from agreement import AGREEMENT_TEXT
+from bot_module.agreement import AGREEMENT_TEXT
 from aiogram.filters import Filter
 import logging
-
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler("../bot_logs.log", 'a', 'utf-8')])
-
-logger = logging.getLogger(__name__)
-
-
-
-TELEGRAM_TOKEN = config('TELEGRAM_TOKEN')
-
-bot = Bot(token=TELEGRAM_TOKEN)
-dp = Dispatcher()
-
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'itregul1.settings')
 
@@ -33,7 +17,23 @@ django.setup()
 
 from users.models import TelegramUser
 
+# logging.basicConfig(level=logging.INFO,
+#                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#                     handlers=[logging.FileHandler("../bot_logs.log", 'a', 'utf-8')])
+
+logger = logging.getLogger(__name__)
+
 router = Router()
+
+# TELEGRAM_TOKEN = config('TELEGRAM_TOKEN')
+#
+# bot = Bot(token=TELEGRAM_TOKEN)
+# dp = Dispatcher()
+
+
+
+#
+# router = Router()
 
 
 class Registration(StatesGroup):
@@ -97,7 +97,7 @@ async def start(message: types.Message):
     except Exception as e:
         logger.error(f"Error in start: {e}")
 
-
+# _________________________________________________________________________
 @router.callback_query(F.data == 'accept_agreement')
 async def accept_agreement(callback_query: types.CallbackQuery, state: FSMContext):
     '''Обрабатывает подтверждение пользовательского соглашения.'''
@@ -246,11 +246,11 @@ async def finish_registration(callback_query: types.CallbackQuery, state: FSMCon
     await state.clear()
 
 
-dp.include_router(router)
-
-
-async def main():
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# dp.include_router(router)
+#
+#
+# async def main():
+#     await dp.start_polling(bot)
+#
+# if __name__ == "__main__":
+#     asyncio.run(main())

@@ -2,7 +2,7 @@ from django.test import TestCase
 import asyncio
 from unittest.mock import Mock, patch, ANY, AsyncMock
 from aiogram import types
-from agreement import AGREEMENT_TEXT
+from bot_module.agreement import AGREEMENT_TEXT
 from bot_module.bot import start, accept_agreement, Registration, get_phone_number, finish_registration
 
 
