@@ -1,5 +1,4 @@
 import os
-
 from aiogram import Router, types, F
 from aiogram.filters.state import State, StatesGroup
 from aiogram.filters.command import Command
@@ -9,6 +8,7 @@ from channels.db import database_sync_to_async
 from bot_module.agreement import AGREEMENT_TEXT
 from aiogram.filters import Filter
 import logging
+from bot_module.services import main_keyboard
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'itregul1.settings')
 
@@ -17,23 +17,10 @@ django.setup()
 
 from users.models import TelegramUser
 
-# logging.basicConfig(level=logging.INFO,
-#                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-#                     handlers=[logging.FileHandler("../bot_logs.log", 'a', 'utf-8')])
 
 logger = logging.getLogger(__name__)
 
 router = Router()
-
-# TELEGRAM_TOKEN = config('TELEGRAM_TOKEN')
-#
-# bot = Bot(token=TELEGRAM_TOKEN)
-# dp = Dispatcher()
-
-
-
-#
-# router = Router()
 
 
 class Registration(StatesGroup):
@@ -77,6 +64,7 @@ async def handle_text_messages(message: types.Message):
 
     if await is_user_registered(user_id):
         await message.answer("Вы уже зарегистрированы в системе.")
+        await send_services_keyboard(message)
     else:
         await message.answer("Вы не зарегистрированы в системе. Чтобы начать регистрацию, отправьте команду /start.")
 
@@ -89,6 +77,7 @@ async def start(message: types.Message):
 
         if await is_user_registered(user_id):
             await message.answer("Вы уже зарегистрированы в системе.")
+            await send_services_keyboard(message)
             return
 
         agreement_text = AGREEMENT_TEXT
@@ -246,11 +235,7 @@ async def finish_registration(callback_query: types.CallbackQuery, state: FSMCon
     await state.clear()
 
 
-# dp.include_router(router)
-#
-#
-# async def main():
-#     await dp.start_polling(bot)
-#
-# if __name__ == "__main__":
-#     asyncio.run(main())
+async def send_services_keyboard(message: types.Message):
+    '''Отправляет клавиатуру с кнопкой "Услуги".'''
+    await message.answer("Выберите действие:", reply_markup=main_keyboard)
+
