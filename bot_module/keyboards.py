@@ -30,13 +30,18 @@ RU_MONTHS = [
 
 
 # Клавиатура для главного меню
-services_button = types.InlineKeyboardButton(text="Услуги", callback_data="show_services")
-main_keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[services_button]])
+def create_main_keyboard():
+    services_button = types.InlineKeyboardButton(text="Услуги", callback_data="show_services")
+    main_keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[services_button]])
+    return main_keyboard
 
-# Клавиатура для меню услуг
-service1_button = types.InlineKeyboardButton(text="Услуга 1", callback_data="service_1")
-service2_button = types.InlineKeyboardButton(text="Услуга 2", callback_data="service_2")
-services_keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[service1_button], [service2_button]])
+
+def create_services_keyboard():
+    service1_button = types.InlineKeyboardButton(text="Услуга 1", callback_data="service_1")
+    service2_button = types.InlineKeyboardButton(text="Услуга 2", callback_data="service_2")
+    services_keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[service1_button], [service2_button]])
+    return services_keyboard
+
 
 # Клавиатуры для подуслуг
 subservice1_1_button = types.InlineKeyboardButton(text="Подуслуга 1.1", callback_data="subservice_1_1")
@@ -77,7 +82,7 @@ def create_calendar(year, month):
         prev_data = CalendarCallbackData(action="prev", year=prev_year, month=prev_month).pack()
         prev_button = InlineKeyboardButton(text="<", callback_data=prev_data)
 
-    back_button = InlineKeyboardButton(text="Назад", callback_data="calendar-back")
+    back_button = InlineKeyboardButton(text="Назад", callback_data="back_to_services")
     next_month = month + 1 if month < 12 else 1
     next_year = year if month < 12 else year + 1
     next_data = CalendarCallbackData(action="next", year=next_year, month=next_month).pack()

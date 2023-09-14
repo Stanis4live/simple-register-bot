@@ -8,7 +8,7 @@ from channels.db import database_sync_to_async
 from bot_module.agreement import AGREEMENT_TEXT
 from aiogram.filters import Filter
 import logging
-from keyboards import main_keyboard
+from keyboards import create_main_keyboard
 from router_config import router
 
 
@@ -63,7 +63,7 @@ async def handle_text_messages(message: types.Message):
     user_id = message.from_user.id
 
     if await is_user_registered(user_id):
-        await send_services_keyboard(message)
+        await message.answer("Выберите услугу:", reply_markup=create_main_keyboard())
     else:
         await message.answer("Вы не зарегистрированы в системе. Чтобы начать регистрацию, отправьте команду /start.")
 

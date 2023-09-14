@@ -1,12 +1,8 @@
+import datetime
 from router_config import router
 from aiogram import types, F
-from keyboards import create_calendar, CalendarCallbackData, ScheduleData, create_schedule_keyboard, DayData
-
-
-@router.callback_query(F.data == 'calendar')
-# @router.message(F.text.startswith('calendar'))
-async def debug_callback(query: types.CallbackQuery):
-    print(f"Received callback data: {type(query.data)}")
+from keyboards import create_calendar, CalendarCallbackData, ScheduleData, create_schedule_keyboard, DayData, RU_MONTHS, \
+    create_services_keyboard
 
 
 @router.callback_query(CalendarCallbackData.filter(F.action == "prev"))
@@ -25,6 +21,11 @@ async def calendar_next(query: types.CallbackQuery, callback_data: CalendarCallb
     await query.message.edit_text("Выберите дату:", reply_markup=markup)
 
 
+@router.callback_query(F.data == "back_to_services")
+async def back_to_services(query: types.CallbackQuery):
+    await query.message.edit_text("Выберите услугу:", reply_markup=create_services_keyboard())
+
+
 @router.callback_query(ScheduleData.filter(F.action == "record"))
 async def schedule_hour_selected(query: types.CallbackQuery, callback_data: ScheduleData):
     hour = callback_data.hour
@@ -36,20 +37,17 @@ async def schedule_hour_selected(query: types.CallbackQuery, callback_data: Sche
 @router.callback_query(DayData.filter(F.action == "day"))
 async def calendar_day_selected(query: types.CallbackQuery, callback_data: CalendarCallbackData):
     day = callback_data.day
+    month = callback_data.month
+    year = callback_data.year
     # Здесь вы можете сохранить выбранную дату и перейти к расписанию
     markup = create_schedule_keyboard(day)
-    await query.message.edit_text(f"Выбрано {day} число. Выберите время:", reply_markup=markup)
+    await query.message.edit_text(f"Выбрано {day} {RU_MONTHS[month]} {year} года. Выберите время:", reply_markup=markup)
 
 
+@router.callback_query(F.data == "back_to_calendar")
+async def back_to_calendar_callback(query: types.CallbackQuery):
+    current_date = datetime.date.today()
+    markup = create_calendar(current_date.year, current_date.month)
+    await query.message.edit_text("Выберите дату:", reply_markup=markup)
 
 
-# from aiogram import types
-# from keyboards import create_calendar
-# from router_config import router
-#
-# @router.message(Command("calendar"))
-# async def send_calendar(message: types.Message):
-#     markup = create_calendar(2023, 9)
-#     await message.answer("Выберите дату:", reply_markup=markup)
-
-# Здесь вы также можете добавить обработчики для callback-запросов, чтобы обрабатывать выбор даты и навигацию по месяцам.

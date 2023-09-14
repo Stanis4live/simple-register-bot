@@ -1,13 +1,14 @@
 from aiogram import types, F
-from keyboards import services_keyboard, subservices_1_keyboard, subservices_2_keyboard, create_calendar
+from keyboards import create_services_keyboard, subservices_1_keyboard, subservices_2_keyboard, create_calendar
 from router_config import router
 import datetime
+from aiogram.fsm.context import FSMContext
 
 
 # Обработчики для каждой кнопки
 @router.callback_query(F.data == "show_services")
 async def show_services(query: types.CallbackQuery):
-    await query.message.edit_text("Выберите услугу:", reply_markup=services_keyboard)
+    await query.message.edit_text("Выберите услугу:", reply_markup=create_services_keyboard())
 
 
 @router.callback_query(F.data == "service_1")
@@ -21,32 +22,36 @@ async def show_subservices_2(query: types.CallbackQuery):
 
 
 @router.callback_query(F.data == "subservice_1_1")
-async def select_subservice_1_1(query: types.CallbackQuery):
+async def select_subservice_1_1(query: types.CallbackQuery, state: FSMContext):
     current_year = datetime.datetime.now().year
     current_month = datetime.datetime.now().month
+    await state.set_data({"service": "Подуслуга 1.1"})
     markup = create_calendar(current_year, current_month)
     await query.message.edit_text("Выберите дату:", reply_markup=markup)
 
 
 @router.callback_query(F.data == "subservice_1_2")
-async def select_subservice_1_2(query: types.CallbackQuery):
+async def select_subservice_1_2(query: types.CallbackQuery, state: FSMContext):
     current_year = datetime.datetime.now().year
     current_month = datetime.datetime.now().month
+    await state.set_data({"service": "Подуслуга 1.2"})
     markup = create_calendar(current_year, current_month)
     await query.message.edit_text("Выберите дату:", reply_markup=markup)
 
 
 @router.callback_query(F.data == "subservice_2_1")
-async def select_subservice_2_1(query: types.CallbackQuery):
+async def select_subservice_2_1(query: types.CallbackQuery, state: FSMContext):
     current_year = datetime.datetime.now().year
     current_month = datetime.datetime.now().month
+    await state.set_data({"service": "Подуслуга 2.1"})
     markup = create_calendar(current_year, current_month)
     await query.message.edit_text("Выберите дату:", reply_markup=markup)
 
 
 @router.callback_query(F.data == "subservice_2_2")
-async def select_subservice_2_2(query: types.CallbackQuery):
+async def select_subservice_2_2(query: types.CallbackQuery, state: FSMContext):
     current_year = datetime.datetime.now().year
     current_month = datetime.datetime.now().month
+    await state.set_data({"service": "Подуслуга 2.2"})
     markup = create_calendar(current_year, current_month)
     await query.message.edit_text("Выберите дату:", reply_markup=markup)
