@@ -6,12 +6,18 @@ import calendar
 
 
 class CalendarCallbackData(CallbackData, prefix='calendar'):
+    """
+    Класс для работы с данными обратного вызова календаря.
+    """
     action: str
     year: int
     month: int
 
 
 class DayData(CallbackData, prefix='day'):
+    """
+    Класс для работы с данными обратного вызова выбранного дня.
+    """
     action: str
     year: int
     month: int
@@ -19,6 +25,9 @@ class DayData(CallbackData, prefix='day'):
 
 
 class ScheduleData(CallbackData, prefix='schedule'):
+    """
+    Класс для работы с данными обратного вызова расписания.
+    """
     action: str
     hour: int
 
@@ -29,14 +38,19 @@ RU_MONTHS = [
 ]
 
 
-# Клавиатура для главного меню
 def create_main_keyboard():
+    """
+    Создает клавиатуру для главного меню.
+    """
     services_button = types.InlineKeyboardButton(text="Услуги", callback_data="show_services")
     main_keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[services_button]])
     return main_keyboard
 
 
 def create_services_keyboard():
+    """
+    Создает клавиатуру для выбора услуг.
+    """
     service1_button = types.InlineKeyboardButton(text="Услуга 1", callback_data="service_1")
     service2_button = types.InlineKeyboardButton(text="Услуга 2", callback_data="service_2")
     services_keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[service1_button], [service2_button]])
@@ -54,6 +68,9 @@ subservices_2_keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[subservice
 
 
 def create_calendar(year, month):
+    """
+    Создает клавиатуру календаря для выбранного месяца и года.
+    """
     month_year_button = InlineKeyboardButton(text=f"{RU_MONTHS[month]} {year}", callback_data="ignore")
 
     week_days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
@@ -99,6 +116,9 @@ def create_calendar(year, month):
 
 
 def create_schedule_keyboard(selected_date):
+    """
+    Создает клавиатуру с расписанием для выбранной даты.
+    """
     hours = list(range(9, 18))
     schedule_buttons = []
 
@@ -115,6 +135,9 @@ def create_schedule_keyboard(selected_date):
 
 
 def confirmation_keyboard():
+    """
+    Создает клавиатуру для подтверждения действия.
+    """
     confirm_button = types.InlineKeyboardButton(text="Подтвердить", callback_data="confirm_record")
     return types.InlineKeyboardMarkup(inline_keyboard=[[confirm_button]])
 

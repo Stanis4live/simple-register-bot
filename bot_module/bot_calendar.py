@@ -8,6 +8,9 @@ from aiogram.fsm.context import FSMContext
 
 @router.callback_query(CalendarCallbackData.filter(F.action == "prev"))
 async def calendar_prev(query: types.CallbackQuery, callback_data: CalendarCallbackData):
+    """
+    Обработчик кнопки "<" в календаре. Отображает предыдущий месяц.
+    """
     month = callback_data.month
     year = callback_data.year
     markup = create_calendar(int(year), int(month))
@@ -16,6 +19,9 @@ async def calendar_prev(query: types.CallbackQuery, callback_data: CalendarCallb
 
 @router.callback_query(CalendarCallbackData.filter(F.action == "next"))
 async def calendar_next(query: types.CallbackQuery, callback_data: CalendarCallbackData):
+    """
+    Обработчик кнопки ">" в календаре. Отображает следующий месяц.
+    """
     month = callback_data.month
     year = callback_data.year
     markup = create_calendar(int(year), int(month))
@@ -24,11 +30,17 @@ async def calendar_next(query: types.CallbackQuery, callback_data: CalendarCallb
 
 @router.callback_query(F.data == "back_to_services")
 async def back_to_services(query: types.CallbackQuery):
+    """
+    Возвращает пользователя к выбору услуги.
+    """
     await query.message.edit_text("Выберите услугу:", reply_markup=create_services_keyboard())
 
 
 @router.callback_query(ScheduleData.filter(F.action == "record"))
 async def schedule_hour_selected(query: types.CallbackQuery, callback_data: ScheduleData, state: FSMContext):
+    """
+    Обработчик выбора времени записи. Подтверждает выбранное время и отображает детали записи.
+    """
     hour = callback_data.hour
     await state.update_data(time=f"{hour}:00")
     user_data = await state.get_data()
@@ -47,16 +59,23 @@ async def schedule_hour_selected(query: types.CallbackQuery, callback_data: Sche
 
 @router.callback_query(DayData.filter(F.action == "day"))
 async def calendar_day_selected(query: types.CallbackQuery, callback_data: CalendarCallbackData, state: FSMContext):
+    """
+    Обработчик выбора дня в календаре. Позволяет пользователю выбрать время для записи в выбранный день.
+    """
     day = callback_data.day
     month = callback_data.month
     year = callback_data.year
     await state.update_data(date=f"{day} {RU_MONTHS[month]} {year} года")
     markup = create_schedule_keyboard(day)
-    await query.message.edit_text(f"Выбрано {day} {RU_MONTHS[month]} {year} года. Выберите время:", reply_markup=markup)
+    await query.message.edit_text(f"Выбрано {day} {RU_MONTHS[month]} {year} года. Выберите время:",
+                                  reply_markup=markup)
 
 
 @router.callback_query(F.data == "back_to_calendar")
 async def back_to_calendar_callback(query: types.CallbackQuery):
+    """
+    Возвращает пользователя к календарю для выбора другой даты.
+    """
     current_date = datetime.date.today()
     markup = create_calendar(current_date.year, current_date.month)
     await query.message.edit_text("Выберите дату:", reply_markup=markup)

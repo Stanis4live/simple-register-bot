@@ -70,7 +70,6 @@ async def handle_text_messages(message: types.Message):
 
 @router.message(Command("start"))
 async def start(message: types.Message):
-    print('start')
     '''Обрабатывает команду /start и начинает процесс регистрации.'''
     try:
         user_id = message.from_user.id
@@ -237,5 +236,5 @@ async def finish_registration(callback_query: types.CallbackQuery, state: FSMCon
 
 async def send_services_keyboard(message: types.Message):
     '''Отправляет клавиатуру с кнопкой "Услуги".'''
-    await message.answer("Выберите действие:", reply_markup=main_keyboard)
+    await message.answer("Выберите действие:", reply_markup=create_main_keyboard())
 
