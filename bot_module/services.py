@@ -5,7 +5,6 @@ import datetime
 from aiogram.fsm.context import FSMContext
 
 
-# Обработчики для каждой кнопки
 @router.callback_query(F.data == "show_services")
 async def show_services(query: types.CallbackQuery):
     await query.message.edit_text("Выберите услугу:", reply_markup=create_services_keyboard())
@@ -55,3 +54,9 @@ async def select_subservice_2_2(query: types.CallbackQuery, state: FSMContext):
     await state.set_data({"service": "Подуслуга 2.2"})
     markup = create_calendar(current_year, current_month)
     await query.message.edit_text("Выберите дату:", reply_markup=markup)
+
+
+@router.callback_query(F.data == "confirm_record")
+async def confirm_record(query: types.CallbackQuery):
+    await query.message.answer("Запись подтверждена!")
+    await query.message.answer("Выберите услугу:", reply_markup=create_services_keyboard())

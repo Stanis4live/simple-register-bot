@@ -112,3 +112,9 @@ def create_schedule_keyboard(selected_date):
     schedule_buttons.append([back_button])
 
     return InlineKeyboardMarkup(inline_keyboard=schedule_buttons)
+
+
+def confirmation_keyboard():
+    confirm_button = types.InlineKeyboardButton(text="Подтвердить", callback_data="confirm_record")
+    return types.InlineKeyboardMarkup(inline_keyboard=[[confirm_button]])
+

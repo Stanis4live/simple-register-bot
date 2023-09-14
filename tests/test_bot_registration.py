@@ -6,6 +6,7 @@ from bot_module.agreement import AGREEMENT_TEXT
 from bot_module.bot import start, accept_agreement, Registration, get_phone_number, finish_registration
 
 
+
 class BotTests(TestCase):
     def test_start_command_for_new_user(self):
         '''Тестирование команды старт для нового пользователя. Проверяет, что новому пользователю предлагается
@@ -27,7 +28,8 @@ class BotTests(TestCase):
         mock_message.from_user.id = 12345
         mock_message.answer = AsyncMock()
 
-        with patch('bot.is_user_registered', return_value=True):
+        with patch('bot.is_user_registered', return_value=True), patch('bot.send_services_keyboard',
+                                                                       new_callable=AsyncMock):
             asyncio.run(start(mock_message))
 
         mock_message.answer.assert_called_once_with("Вы уже зарегистрированы в системе.")
@@ -54,14 +56,13 @@ class BotTests(TestCase):
             asyncio.run(start(mock_message))
             mock_message.answer.assert_called_once_with(AGREEMENT_TEXT, reply_markup=ANY)
 
-            with patch('bot.accept_agreement'):
-                asyncio.run(accept_agreement(mock_callback_query, mock_state))
+        asyncio.run(accept_agreement(mock_callback_query, mock_state))
 
-            mock_state.set_data.assert_called_once_with({
-                "first_name": "John",
-                "last_name": "Doe"
-            })
-            mock_callback_query.message.edit_text.assert_called_once_with("Пожалуйста, введите ваш номер телефона.")
+        mock_state.set_data.assert_called_once_with({
+            "first_name": "John",
+            "last_name": "Doe"
+        })
+        mock_callback_query.message.edit_text.assert_called_once_with("Пожалуйста, введите ваш номер телефона.")
 
     def test_get_phone_number(self):
         '''Тестирование процесса получения номера телефона от пользователя.
@@ -103,9 +104,11 @@ class BotTests(TestCase):
             "phone_number": "+1234567890"
         })
         mock_state.clear = AsyncMock()
-        with patch('bot.save_user_to_db', new_callable=AsyncMock) as mock_save_user_to_db:
+        with patch('bot.save_user_to_db', new_callable=AsyncMock) as mock_save_user_to_db, patch(
+                'bot.logger.info') as mock_logger:
             asyncio.run(finish_registration(mock_callback_query, mock_state))
 
             mock_save_user_to_db.assert_called_once_with(12345, "John", "Doe", "+1234567890")
+            mock_logger.assert_called_once()
 
             mock_callback_query.message.answer.assert_called_once_with("Регистрация завершена")
