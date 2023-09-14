@@ -28,6 +28,7 @@ django.setup()
 
 dp.include_router(router)
 from registration import *
+from bot_calendar import *
 
 
 async def main():

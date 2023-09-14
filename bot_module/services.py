@@ -1,12 +1,12 @@
 from aiogram import types, F
-from keyboards import services_keyboard, subservices_1_keyboard, subservices_2_keyboard
+from keyboards import services_keyboard, subservices_1_keyboard, subservices_2_keyboard, create_calendar
 from router_config import router
+import datetime
 
 
 # Обработчики для каждой кнопки
 @router.callback_query(F.data == "show_services")
 async def show_services(query: types.CallbackQuery):
-    print('Here')
     await query.message.edit_text("Выберите услугу:", reply_markup=services_keyboard)
 
 
@@ -19,6 +19,34 @@ async def show_subservices_1(query: types.CallbackQuery):
 async def show_subservices_2(query: types.CallbackQuery):
     await query.message.edit_text("Выберите подуслугу для Услуги 2:", reply_markup=subservices_2_keyboard)
 
-# ... (добавьте обработчики для подуслуг, если необходимо выполнить какие-либо действия при их выборе)
+
+@router.callback_query(F.data == "subservice_1_1")
+async def select_subservice_1_1(query: types.CallbackQuery):
+    current_year = datetime.datetime.now().year
+    current_month = datetime.datetime.now().month
+    markup = create_calendar(current_year, current_month)
+    await query.message.edit_text("Выберите дату:", reply_markup=markup)
 
 
+@router.callback_query(F.data == "subservice_1_2")
+async def select_subservice_1_2(query: types.CallbackQuery):
+    current_year = datetime.datetime.now().year
+    current_month = datetime.datetime.now().month
+    markup = create_calendar(current_year, current_month)
+    await query.message.edit_text("Выберите дату:", reply_markup=markup)
+
+
+@router.callback_query(F.data == "subservice_2_1")
+async def select_subservice_2_1(query: types.CallbackQuery):
+    current_year = datetime.datetime.now().year
+    current_month = datetime.datetime.now().month
+    markup = create_calendar(current_year, current_month)
+    await query.message.edit_text("Выберите дату:", reply_markup=markup)
+
+
+@router.callback_query(F.data == "subservice_2_2")
+async def select_subservice_2_2(query: types.CallbackQuery):
+    current_year = datetime.datetime.now().year
+    current_month = datetime.datetime.now().month
+    markup = create_calendar(current_year, current_month)
+    await query.message.edit_text("Выберите дату:", reply_markup=markup)

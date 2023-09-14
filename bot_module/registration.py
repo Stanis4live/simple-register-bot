@@ -63,7 +63,6 @@ async def handle_text_messages(message: types.Message):
     user_id = message.from_user.id
 
     if await is_user_registered(user_id):
-        await message.answer("Вы уже зарегистрированы в системе.")
         await send_services_keyboard(message)
     else:
         await message.answer("Вы не зарегистрированы в системе. Чтобы начать регистрацию, отправьте команду /start.")
