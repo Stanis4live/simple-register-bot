@@ -60,3 +60,6 @@ async def select_subservice_2_2(query: types.CallbackQuery, state: FSMContext):
 async def confirm_record(query: types.CallbackQuery):
     await query.message.answer("Запись подтверждена!")
     await query.message.answer("Выберите услугу:", reply_markup=create_services_keyboard())
+
+
+# some_new_code
